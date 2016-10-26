@@ -1,6 +1,11 @@
 
 #include "boundary.h"
 
+
+
+//TODO consider for polygon precomputing distance of all pixels inside., especially if planning on varying boundary values for same shape
+
+
 Point Boundary::walkOnSphere(Point p){
     float radius = distanceToBoundary(p);
     float ang = rand()*2*3.141592653;
@@ -9,8 +14,11 @@ Point Boundary::walkOnSphere(Point p){
 
 Point Boundary::exitPoint(Point start){
     Point current = start;
-    while( insideBoundary(current)){
+   
+    while(insideBoundary(current)){
+        
         current = walkOnSphere(current);
+       
     }
     return closestPoint(current);
 }
@@ -91,6 +99,158 @@ float Circle::boundaryValue(Point exit){
      if(exit.y>center.y&&exit.x>center.x) return 1;
     return 0;
 }
+
+
+
+
+
+
+float Polygon::distanceToSegment(Point p, Point a, Point b){
+    
+    //Assumption is that, if a is (0,0) and b is (1,0)
+    // then (0.5, 1) is inside and (0.5, -1) is outside.
+    
+    //Border case, if the point is collinear with the
+    //line segment, then we return 10000; Basically,
+    //this will cause distanceToBoundary to ignore it,
+    //and the closest segment will be the one connected
+    //to ab, with which p cannot also be collinear.
+    //Yes, this is a hack.
+    
+    //Also, I'jb
+    float distance;
+    int px, py, ax, ay, bx, by, apx, apy, abx, aby, bpx, bpy;
+    double ux,uy;
+    px = p.x;
+    py = p.y;
+    ax = a.x;
+    ay = a.y;
+    bx = b.x;
+    by = b.y;
+    apx = px-ax;
+    apy = py-ay;
+    abx = bx-ax;
+    aby = by-ay;
+    bpx = px-bx;
+    bpy = py-by;
+    
+//    Point ap = p-a;
+    
+//    Point ab = b-a;
+//    float cross = ab.cross(ap);
+    float cross = abx*apy-aby*apx;
+    int sign = (cross > 0) - (cross < 0);//isn't this nice
+  //  std::cout<<abx<<" "<<aby<<" "<<apx<<" "<<apy<<"\n";
+
+//    float ab_norm = norm(ab);
+    float ab_norm = sqrt(abx*abx+aby*aby);
+//    Point ab_unit = Point(ab.x/ab_norm, ab.y/ab_norm);
+    ux = abx/ab_norm;
+    uy = aby/ab_norm;
+    
+    float dot = apx*ux+apy*uy;
+    if(sign==0){
+        if(dot>=0&&dot<=ab_norm){
+            return 0;
+        }return 10000;
+    }
+//    float dot = ap.dot(ab_unit);
+    if(dot<0){
+         //       distance = norm(ap);
+        return sign*sqrt(apx*apx+apy*apy);//distance;
+    }
+    else if(dot > ab_norm){
+        return sign*sqrt(bpx*bpx+bpy*bpy);//norm(p-b);
+    }
+    else{
+        double x = apx-dot*ux;
+        double y = apy-dot*uy;
+        return sign*sqrt(x*x+y*y);//norm(ap-dot*ab_unit);
+    }
+}
+Point Polygon::closestPoint(Point p){
+//    double px,py,abx,aby,sx,sy,rx,ry,ux,uy,apy,apx;
+//    px = p.x;py=p.y;sx=s.x;sy=s.y;rx=r.x;ry=r.y;
+//    abx=sx-rx;aby=sy-ry;apx=px-rx;apy=py-ry;
+////    Point ab = s-r;
+////    Point ap = p-r;
+//    float ab_norm = sqrt(abx*abx+aby*aby);//norm(ab);
+//    
+//    //Point ab_unit = Point( ab.x/ab_norm, ab.y/ab_norm);
+//    ux=abx/ab_norm;
+//    uy=aby/ab_norm;
+//    float dot = apx*ux+apy*uy;//ap.dot(ab_unit);
+//    if(dot<0) return r;
+//    if(dot>ab_norm) return s;
+//    return Point(rx+dot*ux,ry+dot*uy);//r + dot*ab_unit;
+    
+    return p;//for now, use this. Only consequence is that
+    // boundaryValue(p) is defined less precisely
+}
+
+
+
+
+
+
+float Polygon::distanceToBoundary(Point p){
+    if(p.x<0||p.y<0||p.x>499||p.y>499) std::cout<<"ERROR"<<std::endl;
+    return distances[p.y+500*p.x];
+//    r = points[points.size()-1];
+//    s = points[0];
+//    float min = distanceToSegment(p,
+//                points[points.size()-1], points[0]);
+//
+//    float dist;
+//    for(int i=0; i<points.size()-1;i++){
+//        dist = distanceToSegment(p, points[i], points[i+1]);
+//        if(std::abs(dist)<std::abs(min)){
+//            min = dist;
+//            r = points[i];
+//            s = points[i+1];
+//        }
+//    }
+//    return min;
+}
+float Polygon::boundaryValue(Point exit){
+    if(exit.y+exit.x>500) return 1; //just make the right side hot, idk
+    return 0;
+}
+
+
+
+
+
+float Polygon::distanceHelper(Point p){
+
+    float min = distanceToSegment(p,
+                                  points[points.size()-1], points[0]);
+    
+    float dist;
+    for(int i=0; i<points.size()-1;i++){
+        dist = distanceToSegment(p, points[i], points[i+1]);
+        
+        if(std::abs(dist)<std::abs(min)){
+            min = dist;
+        }
+        else if(std::abs(dist)==std::abs(min)&&dist<0){
+            min=dist;
+        }
+    }
+        //if flag is one, we don't know if its in or out.
+       //std::cout<<p<<" got "<<rayTest(p)<<std::endl;
+    return min;
+}
+void Polygon::initDistances(){
+    for(int row = 0; row<500; row++){
+        for(int col = 0; col<500; col++){
+            distances[col+500*row] = distanceHelper(Point(row,col));
+        }
+    }
+}
+
+
+
 
 
 

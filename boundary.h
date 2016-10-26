@@ -5,7 +5,11 @@ using namespace cv;
 class Boundary
 {
     public:
-    Boundary(float e) : epsilon(e){}
+    Boundary(float e) : epsilon(e){
+//        lookup = new Point[500*500];
+//        memset(lookup,-1,500*500*sizeof(Point));
+//        
+    }
     
     virtual float distanceToBoundary(Point p) = 0;//returns negative if outside
     
@@ -19,13 +23,13 @@ class Boundary
     Point walkOnSphere(Point p);
     
     Point exitPoint(Point start);
-    
+   
     float expectationOfBrownian(Point start, int iterations);
     
     protected: //xcode is automatically dedenting subsequent lines o_O
     
     float epsilon;
-    
+   // Point* lookup;
     
     
 };
@@ -67,7 +71,7 @@ class Rectangle : public Boundary{
 
 
 class Circle : public Boundary{
-public:
+    public:
     Circle(Point c, float r, float e) :
     Boundary(e), center(c), radius(r){}
     
@@ -90,7 +94,33 @@ protected:
 };
 
 
-
+class Polygon : public Boundary{
+    public:
+    Polygon(vector<Point> p, float e) : Boundary(e), points(p){
+        distances = new float[500*500];
+        initDistances();
+    }
+    ~Polygon(){
+        delete(distances);
+    }
+    
+    void initDistances();
+    float distanceHelper(Point p);
+    float distanceToBoundary(Point p);//returns negative if outside
+    
+    float distanceToSegment(Point p, Point a, Point b);
+    
+    Point closestPoint(Point p); //returns closest point on boundary to p
+    float boundaryValue(Point exit); //must be in [0,1]
+    
+protected:
+    vector<Point> points;
+    Point r,s; //distanceToSegment sets these,
+                //and closestPoint gets them
+    float* distances;
+    
+    
+};
 
 
 
