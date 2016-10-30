@@ -1,6 +1,6 @@
 
 #include "boundary.h"
-
+#include "winding.h"
 
 
 //TODO consider for polygon precomputing distance of all pixels inside., especially if planning on varying boundary values for same shape
@@ -29,7 +29,9 @@ float Boundary::expectationOfBrownian(Point start, int iterations){
     Point exit;
     for(int i=0;i<iterations;i++){
         exit = exitPoint(start);
+        
         sum += boundaryValue(exit);
+       
     }
     return sum/iterations;
     
@@ -217,24 +219,85 @@ float Polygon::boundaryValue(Point exit){
     return 0;
 }
 
+int Polygon::insidePolygon(Point p){
+    
+    vector<Point> the_copy(points);
+    Point repeat(points[0].x, points[0].y);
+    the_copy.push_back(the_copy[0]);
+    int flag = wn_PnPoly(p, (Point *) &the_copy[0], points.size());
+    return flag;
+    
+    //find closest point
+    //find next closest point, wrt orientation
+    //check if point is on correct side of that side
 
+    
+    
+    //This needs to be done properly, but it's giving me a lot of difficulty for some reason
+    
+//    int counter = 0;
+//    
+//    //cast a ray from wall, see how many segments intersected
+//    Point a,b;
+//    float proj;
+//    int j;
+//    for(int i=0;i<points.size();i++){
+//        j = (i+1)%points.size();
+//        if(points[i].y<points[j].y){
+//            a = points[i];
+//            b = points[j];
+//        }else{
+//            a = points[j];
+//            b = points[i];
+//        }
+//        //b has larger y values
+//        if(b.y>=p.y&&p.y>=a.y){ //if p is between them
+//            //make sure p is to the left of the segment ab
+//            if(b.y==a.y){
+//                if((b.x-p.x)*(a.x-p.x)<0){
+//                    counter++;
+//                }
+//            }else{
+//                proj = (p.y-a.y)/(b.y-a.y);
+//                proj = a.x + proj*(b.x-a.x);
+//                if(proj<=p.x){
+//                    counter++;
+//                }
+//            }
+//        }
+//    }
+//
+//    return counter%2;
+}
 
 
 
 float Polygon::distanceHelper(Point p){
-
+    
+   
+    
     float min = distanceToSegment(p,
                                   points[points.size()-1], points[0]);
     
+    
     float dist;
+    int flag = 0;
     for(int i=0; i<points.size()-1;i++){
         dist = distanceToSegment(p, points[i], points[i+1]);
         
         if(std::abs(dist)<std::abs(min)){
+            flag = 0;
             min = dist;
+        }else if(std::abs(dist)==std::abs(min)){
+            flag = 1;
         }
-        else if(std::abs(dist)==std::abs(min)&&dist<0){
-            min=dist;
+        
+    }
+    if(flag){
+        if(insidePolygon(p)){
+            min = abs(min);
+        }else{
+            return -1;
         }
     }
         //if flag is one, we don't know if its in or out.
@@ -242,6 +305,7 @@ float Polygon::distanceHelper(Point p){
     return min;
 }
 void Polygon::initDistances(){
+    
     for(int row = 0; row<500; row++){
         for(int col = 0; col<500; col++){
             distances[col+500*row] = distanceHelper(Point(row,col));

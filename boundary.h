@@ -2,6 +2,7 @@
 #include <opencv2/opencv.hpp>
 
 using namespace cv;
+using namespace std;
 class Boundary
 {
     public:
@@ -109,15 +110,21 @@ class Polygon : public Boundary{
     float distanceToBoundary(Point p);//returns negative if outside
     
     float distanceToSegment(Point p, Point a, Point b);
-    
+    int insidePolygon(Point p);
     Point closestPoint(Point p); //returns closest point on boundary to p
     float boundaryValue(Point exit); //must be in [0,1]
-    
+     float* distances;
 protected:
     vector<Point> points;
     Point r,s; //distanceToSegment sets these,
                 //and closestPoint gets them
-    float* distances;
+//    float* distances;
+    
+    
+};
+
+class Mandelbrot : public Boundary{
+    
     
     
 };
