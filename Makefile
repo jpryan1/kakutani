@@ -2,3 +2,7 @@ FLAGS = -I/usr/local/Cellar/opencv/2.4.12_2/include/opencv -I/usr/local/Cellar/o
 
 default:
 	g++ $(FLAGS) kakutani.cpp boundary.cpp -o kakutani
+
+
+random:
+	g++ $(FLAGS) random.cpp -o ran

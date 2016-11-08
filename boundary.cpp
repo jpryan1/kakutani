@@ -7,7 +7,7 @@
 
 
 Point Boundary::walkOnSphere(Point p){
-    float radius = distanceToBoundary(p);
+    float radius = 200*distanceToBoundary(p);
     float ang = rand()*2*3.141592653;
     return Point(p.x+radius*cos(ang), p.y + radius*sin(ang));
 }
@@ -196,7 +196,7 @@ Point Polygon::closestPoint(Point p){
 
 
 float Polygon::distanceToBoundary(Point p){
-    if(p.x<0||p.y<0||p.x>499||p.y>499) std::cout<<"ERROR"<<std::endl;
+    if(p.x<0||p.y<0||p.x>499||p.y>499) std::cout<<p<<std::endl;
     return distances[p.y+500*p.x];
 //    r = points[points.size()-1];
 //    s = points[0];
@@ -215,8 +215,8 @@ float Polygon::distanceToBoundary(Point p){
 //    return min;
 }
 float Polygon::boundaryValue(Point exit){
-    if(exit.y+exit.x>500) return 1; //just make the right side hot, idk
-    return 0;
+    if(exit.x>250&&exit.x<320) return 0;
+    return (exit.y+exit.x)/900.0;
 }
 
 int Polygon::insidePolygon(Point p){
@@ -274,35 +274,27 @@ int Polygon::insidePolygon(Point p){
 
 float Polygon::distanceHelper(Point p){
     
-   
+    if(!insidePolygon(p)) return -1; //this check may hurt running time, but trying to check later has been
+                                    //causing problems, so check initially for now.
     
     float min = distanceToSegment(p,
                                   points[points.size()-1], points[0]);
     
     
     float dist;
-    int flag = 0;
     for(int i=0; i<points.size()-1;i++){
         dist = distanceToSegment(p, points[i], points[i+1]);
         
         if(std::abs(dist)<std::abs(min)){
-            flag = 0;
+            
             min = dist;
-        }else if(std::abs(dist)==std::abs(min)){
-            flag = 1;
         }
         
     }
-    if(flag){
-        if(insidePolygon(p)){
-            min = abs(min);
-        }else{
-            return -1;
-        }
-    }
+    
         //if flag is one, we don't know if its in or out.
        //std::cout<<p<<" got "<<rayTest(p)<<std::endl;
-    return min;
+    return abs(min);
 }
 void Polygon::initDistances(){
     
@@ -315,6 +307,59 @@ void Polygon::initDistances(){
 
 
 
+
+
+
+void Mandelbrot::initDistances(){
+    for(int row = 0; row<500; row++){
+        for(int col = 0; col<500; col++){
+            distances[col+500*row] = distanceHelper(Point(row,col));
+        }
+        
+    }
+}
+float Mandelbrot::distanceHelper(Point p){
+    
+
+    
+    complex<float> c( (p.x-250.0)*(1/200.0)-1, (p.y-250.0)*(1/200.0) );
+    complex<float> z(0.0, 0.0);
+    complex<float> dz(0.0, 0.0);
+    
+    //        Complex z( 0.0f, 0.0f );
+    //        Complex dz( 0.0f, 0.0f );
+    //
+    float m2;
+    
+    for( int i=0; i<2048; i++ ){
+        
+        dz = 2.0f*z*dz + 1.0f;
+        z = z*z + c;
+        m2 = pow(z.real(),2)+pow(z.imag(),2);
+        if( m2>1e18 )
+            break;
+    }
+    //        // distance estimation: G/|G'|
+
+    return sqrtf( m2/( pow( dz.real(),2 )+pow(dz.imag(),2) ))*0.5*logf(m2);
+
+}
+
+
+float Mandelbrot::distanceToBoundary(Point p){
+    if(p.x<0||p.y<0||p.x>499||p.y>499) return 0;
+    return distances[p.y+500*p.x];
+    
+}
+Point Mandelbrot::closestPoint(Point p){
+    return p; //for now
+}
+float Mandelbrot::boundaryValue(Point exit){
+    if(exit.x<0||exit.y<0||exit.x>499||exit.y>499) return 0;
+
+    return 1;
+    
+}
 
 
 

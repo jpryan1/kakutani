@@ -113,8 +113,10 @@ class Polygon : public Boundary{
     int insidePolygon(Point p);
     Point closestPoint(Point p); //returns closest point on boundary to p
     float boundaryValue(Point exit); //must be in [0,1]
-     float* distances;
+ 
 protected:
+    float* distances;
+
     vector<Point> points;
     Point r,s; //distanceToSegment sets these,
                 //and closestPoint gets them
@@ -124,6 +126,22 @@ protected:
 };
 
 class Mandelbrot : public Boundary{
+public:
+    Mandelbrot(float e) : Boundary(e){
+        distances = new float[500*500];
+        initDistances();
+    }
+    ~Mandelbrot(){
+        delete(distances);
+    }
+    
+    void initDistances();
+    float distanceHelper(Point p);
+    float distanceToBoundary(Point p);//returns negative if outside
+    Point closestPoint(Point p); //returns closest point on boundary to p
+    float boundaryValue(Point exit); //must be in [0,1]
+    float* distances;
+protected:
     
     
     
